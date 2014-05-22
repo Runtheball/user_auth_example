@@ -5,7 +5,7 @@
 
 %ul
 	- @wishlist.items.each do |item|
-		%li= item.name
+		%li= link_to item.name, wishlist_item_path(@wishlist, item)
 
 %br
 = link_to "Add new item to list", new_wishlist_item_path(wishlist_id: @wishlist.id)

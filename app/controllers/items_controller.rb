@@ -4,6 +4,13 @@ class ItemsController < ApplicationController
 		@item = Item.new
 	end
 
+	def show
+		@item = Item.find(params[:id])
+		response = HTTParty.get("https://openapi.etsy.com/v2/listings/#{@item.etsy_id}/images?api_key=#{Rails.application.secrets.etsy_api_key}")
+		#debugger
+		@images = response["results"]
+	end
+
 	def create
 		@item = Item.new(item_params)
 		if @item.save
