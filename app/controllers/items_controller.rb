@@ -6,10 +6,24 @@ class ItemsController < ApplicationController
 
 	def show
 		@item = Item.find(params[:id])
-		response = HTTParty.get("https://openapi.etsy.com/v2/listings/#{@item.etsy_id}/images?api_key=#{Rails.application.secrets.etsy_api_key}")
-		#debugger
-		@images = response["results"]
+    #debugger
+    response = HTTParty.get("https://openapi.etsy.com/v2/listings/#{@item.etsy_id}/images?api_key=#{Rails.application.secrets.etsy_api_key}")
+    @images = response["results"]
+    second_response = HTTParty.get("https://openapi.etsy.com/v2/listings/#{@item.etsy_id}?api_key=#{Rails.application.secrets.etsy_api_key}")
+    if second_response["results"][0]["price"]
+    	@price = second_response["results"][0]["price"]
+    else
+    	"The price of this item is not available without selecting additional options (such as desired weight, quantity, etc). "
+    end
+    third_response = HTTParty.get("https://openapi.etsy.com/v2/listings/#{@item.etsy_id}?api_key=#{Rails.application.secrets.etsy_api_key}")
+    if third_response["results"][0]["materials"]
+    	@materials = third_response["results"][0]["materials"]
+    end
+    forth_response = HTTParty.get("https://openapi.etsy.com/v2/listings/#{@item.etsy_id}?api_key=#{Rails.application.secrets.etsy_api_key}")
+    @description = forth_response["results"][0]["description"]
 	end
+
+	
 
 	def create
 		@item = Item.new(item_params)

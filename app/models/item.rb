@@ -15,10 +15,17 @@ class Item < ActiveRecord::Base
     listing = etsy_data["results"][0]
     self[:name] = listing["title"]
     self[:description] = listing["description"]
-    #self.save
+    if self[:price]
+      self[:price] = listing["price"]
+    else
+      "The price of this item is not available without selecting additional options (such as desired weight, quantity, etc). "
+    end
+    if self[:materials]
+      self[:materials] = listing["materials"]
+    end
   end
 
   def get_etsy_data
-    HTTParty.get("https://openapi.etsy.com/v2/listings/#{self.etsy_id}?api_key=#{Rails.application.secrets.etsy_api_key}")
+    HTTParty.get("https://openapi.etsy.com/v2/listings/#{self.etsy_id}?api_key=#{Rails.application.secrets.etsy_api_key}")   
   end
 end

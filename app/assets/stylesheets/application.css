@@ -18,3 +18,10 @@
 	font-size: 10px;
 	float: right;
 }
+
+.description { 
+  width:20em; 
+  float:right; 
+  padding:1em;
+  border:1px solid black;
+}

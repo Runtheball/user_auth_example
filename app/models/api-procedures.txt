@@ -1,0 +1,111 @@
+API - Procedures
+
+From lecture: 
+def create
+@wishlist = current_user.wishlists.build(wishlist_params)
+
+The above line says 'for my user build a wishlist for them with user_id auto-populated, then use what the user has input to build the wishlist'. There would be a form for user to fill out that triggers this. This is a quick way of auto-assigning something to a user. 
+
+resources :wishlists do
+  resources :items  
+
+  #This goes into routes.rb, and makes routes like 'wishlists/1/items', which should have a page of all items for the wishlist with id 1
+
+  #with a login and user_auth in place, you can have the following in wishlist_controller to ensure that a user can only view his own wishlist:
+
+  def index
+    @wishlists = current_user.wishlists.all
+  end
+
+
+  Accessing an api: (example uses Etsy api)
+
+  1. Go to website for the api you're interested in - usually they'll have a developers page with api info
+  2. Chances are you'll need to register to get an api key and have access to the api
+  3. The Etsy api is access via:
+      GET htps://openapi.etsy.com/v2/listings/active?api_key={YOUR_API_KEY}
+  4. You'll need to take the api_key and install it into your config->secrets.yml
+  5. development: 
+    secret_key_base: (this should already be present)
+    etsy_api_key: byuuuatt4p836apl2xoklgdr
+  6. To interact with an api, you'll make a request in the form of hitting a url as GET, PUT, POST request to the api, and it'll respond with a JSON hash containing all of the item's attributes.
+  7. Now, when we create an item, we just want to have an input field where we input the item url. 
+  8. When we're accessing info from the api, consider what info might change. We don't want to store changing info within our db, as we'd need to always be updating that info.
+  9. Create a migration to add api info to the Items table:
+      Class AddEtsyColumnsToItems < ActiveRecord::Migration
+        def change
+          add_column :items, :etsy_url, :string
+          add_column :items, :etsy_id, :string
+        end
+      end
+  10. Now with the form for inputting etsy item url, we're going to get the url and then in our backend we're going to parse that url to get the id, then make a request to etsy api using GET to the url/listing/id. 
+  11. Parsing the URL: in item model...
+      class Item < ActiveRecord::Base
+        belongs_to :wishlist
+
+        before_create :get_etsy_id
+
+        def get_etsy_id
+          string = self.etsy_url
+          regex = /\d+/
+          numbers = string.scan(regex)
+          self[:etsy_id] = numbers[0]
+        end
+      end
+
+  12. to test this, copy an item url from Etsy website, go into rails c, 
+      string = YOUR ETSY ITEM URL
+      regex = /\d+/
+      string.scan(regex)  
+  13. The above should return an array of 1 string of integers...its the item id. There may be more numbers if they're within the item url, but the first numbers (in the zero index position) are probably going to represent the item id.
+
+  14. Install  gem httparty to make working with html easier.
+
+  15. In rails console, you can try out the directions provided in the api: 
+      response = HTTParty.get("https://www.etsy.com/listing/186533496/ipad-stand-for-the-kitchen-cutting-board")
+    that's going to return ALL the html on the page, but we can select only a part of that html...
+
+  16. def create
+        @item = Item.new(item_params)
+        if @item.save
+          response = HTTParty.get("https://openapi.etsy.com/v2/listings/#{@item.etsy_id}")
+          redirect_to wishlist_path(params[:wishlist_id]), notice: "Item added"
+        else
+          redirect_to :back, alert: "failed to save"
+        end
+      end
+
+  17. However, every request must include a query string at the end of any url, with the api key in it. 
+    response = HTTParty.get("https://openapi.etsy.com/v2/listings/#{@item.etsy_id}?api_key=#{Rails.application.secrets.etsy_api_key}")
+    puts response # allows use to see what is returned in our server log. What that will be is an array of hashes. So if we want info from one particular hash, we can access that info something like this...
+    listing = etsy_data["results"][0]
+      self[:name] = listing["title"]
+
+    see additional code in #18 below for how the etsy_data is saved.
+
+  18. Shelby removed the above code from controller and put it in the model. The finished model looks like :
+
+  class Item < ActiveRecord::Base
+    belongs_to :wishlist
+
+    before_create :get_etsy_id, :set_attributes_from_etsy
+
+    def get_etsy_id
+      string = self.etsy_url
+      regex = /\d+/
+      numbers = string.scan(regex)
+      self[:etsy_id] = numbers[0]
+    end
+
+    def set_attributes_from_etsy
+      etsy_data = get_etsy_data
+      listing = etsy_data["results"][0]
+      self[:name] = listing["title"]
+      self[:description] = listing["description"]
+      #self.save
+    end
+
+    def get_etsy_data
+      HTTParty.get("https://openapi.etsy.com/v2/listings/#{self.etsy_id}?api_key=#{Rails.application.secrets.etsy_api_key}")
+    end
+  end

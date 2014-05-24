@@ -1,0 +1,21 @@
+%h3= @item.name
+%br
+%div.description 
+  <h4>Description:</h4>
+  = @description
+
+- @images.each do |image|
+  = image_tag image["url_570xN"]
+
+%br
+Price:
+= @price
+%br
+Materials:
+= @materials
+%br
+
+%br
+= link_to "View on Etsy", "http://www.etsy.com/listing/#{@item.etsy_id}"
+%br
+= link_to "Return to Wishlist", wishlists_path
