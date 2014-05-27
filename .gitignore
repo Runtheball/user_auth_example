@@ -14,3 +14,7 @@
 # Ignore all logfiles and tempfiles.
 /log/*.log
 /tmp
+
+
+*Ignore secrets.yml and its api keys
+/config/secrets.yml

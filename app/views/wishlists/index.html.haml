@@ -19,3 +19,22 @@
 	= f.text_field :description
 	= f.submit
 
+= link_to "Hook up Github", github_auth_path
+
+%br
+%br
+%h3 Create a new gist for Github
+%h5 This has nothing to do with wishlists or items
+%br
+
+= form_tag create_gist_path do
+	= label_tag :title
+	= text_field_tag :title
+	%br
+	= label_tag :description
+	= text_field_tag :description
+	%br
+	= label_tag "File content"
+	= text_field_tag :content
+	%br
+	= submit_tag "Create Gist!"
